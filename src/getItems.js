@@ -2,11 +2,11 @@ const Apify = require('apify');
 
 const { log } = Apify.utils;
 
-async function scrapeUrls(pageObj) {
+async function scrapeDetailsPage(pageObj) {
     const resultsArr = [];
     // get page 1 url
     const page1Url = await pageObj.url();
-    log.info(`this is the page1url: ${page1Url}`)
+    log.info(`this is the page1url: ${page1Url}`);
     resultsArr.push(page1Url);
 
     // Go to page 2 and scrape
