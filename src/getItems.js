@@ -16,11 +16,15 @@ async function scrapeDetailsPage(pageObj) {
     } catch (e) {
         log.error(`Could not extract second page - only one page returned. ${e}`);
     }
+    log.info('there was a next page')
     if (nextPage) {
+      log.info('we are clicking and going')
         await nextPage.click();
         await pageObj.waitForNavigation();
         const page2Url = await pageObj.url();
+        log.info('we got page 2 and are pushing')
         resultsArr.push(page2Url);
+        log.info('we are pushing to apify')
         await Apify.pushData(resultsArr);
         log.info(`Saving results from ${page2Url}`);
     }
