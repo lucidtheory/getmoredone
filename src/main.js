@@ -130,6 +130,32 @@ Apify.main(async () => {
                     },
                 });
             }
+            
+            if (depthOfCrawl === 5 && request.userData.depthOfCrawl === 4) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'ul > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 5;
+                        return req;
+                    },
+                });
+            }
+            
+            if (depthOfCrawl === 6 && request.userData.depthOfCrawl === 5) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'ul > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 6;
+                        return req;
+                    },
+                });
+            }
 
             // Log number of pending URLs (works only locally)
             // log.info(`Pending URLs: ${requestQueue.pendingCount}`);

@@ -2,13 +2,42 @@ const Apify = require('apify');
 
 const { log } = Apify.utils;
 
-async function scrapeDetailsPage(pageObj) {
-    const resultsArr = [];
-    // get page 1 url
-    const page1Url = {url: await pageObj.url()};
-    log.info(`this is the page1url: ${page1Url}`);
-    resultsArr.push(page1Url);
+async function getItems(pageObj, pageData, resultsArr) {
+    // Scrape all items that match the selector
+    const itemsObj = await pageObj.$$eval('div.p13n-sc-truncated', prods => prods.map(prod => prod.innerHTML));
 
+    const pricesObj = await pageObj.$$eval('span.p13n-sc-price', price => price.map(el => el.innerHTML));
+
+    const urlsObj = await pageObj.$$eval('span.aok-inline-block > a.a-link-normal', link => link.map(url => url.href));
+
+    const imgsObj = await pageObj.$$eval('a.a-link-normal > span > div.a-section > img', link => link.map(url => url.src));
+
+    // Get rid of duplicate URLs (couldn't avoid scraping them)
+    const urlsArr = [];
+    for (const link of urlsObj) {
+        if (!urlsArr.includes(link)) {
+            urlsArr.push(link);
+        }
+    }
+
+    // Add scraped items to results array
+    for (let i = 0; i < Object.keys(itemsObj).length; i++) {
+        resultsArr.push({
+            ...pageData,
+            ID: resultsArr.length,
+            name: itemsObj[i],
+            price: pricesObj[i],
+            url: urlsArr[i],
+            thumbnail: imgsObj[i],
+            asin: urlsArr[i]?.split("/dp/")[1]?.split("/")[0]
+        });
+    }
+}
+
+async function scrapeDetailsPage(pageObj, pageData) {
+    const resultsArr = [];
+    // Scrape page 1
+    await getItems(pageObj, pageData, resultsArr);
     // Go to page 2 and scrape
     let nextPage;
     try {
@@ -16,17 +45,12 @@ async function scrapeDetailsPage(pageObj) {
     } catch (e) {
         log.error(`Could not extract second page - only one page returned. ${e}`);
     }
-    log.info('there was a next page')
     if (nextPage) {
-      log.info('we are clicking and going')
         await nextPage.click();
         await pageObj.waitForNavigation();
-        const page2Url = await pageObj.url();
-        log.info('we got page 2 and are pushing')
-        resultsArr.push({url: page2Url});
-        log.info('we are pushing to apify')
+        await getItems(pageObj, pageData, resultsArr);
         await Apify.pushData(resultsArr);
-        log.info(`Saving results from ${page2Url}`);
+        log.info(`Saving results from ${await pageObj.title()}`);
     }
 }
 
