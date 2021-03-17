@@ -1,19 +1,12 @@
 const Apify = require('apify');
+const cheerio = require('cheerio');
 
-const { log } = Apify.utils;
-const { handlePageFunction } = require('./handlePageFunction.js');
-
-// 1. Build an array of links
-// 2. Get the entry link (Books Category)
-// 3. Start a result array
-// 4. Add this link and second page if there is one
-// 5. Add all the first teir sub links to the queue to be scraped
-// 6. Keep going from there.
-// 7. Return the results
+const { log, enqueueLinks } = Apify.utils;
+const { scrapeDetailsPage } = require('./getItems.js');
 
 Apify.main(async () => {
-    const requestQueue = await Apify.openRequestQueue(); // Starts the queue
-    const input = await Apify.getValue('INPUT'); // Gets our Book Category link
+    const requestQueue = await Apify.openRequestQueue();
+    const input = await Apify.getValue('INPUT');
 
     const { proxy, domain, categoryUrls, depthOfCrawl } = input;
     // Select which domain to scrape
@@ -53,9 +46,99 @@ Apify.main(async () => {
                 mockDeviceMemory: false,
             },
         },
-        handlePageFunction: args => handlePageFunction({
-            depthOfCrawl, requestQueue, ...args,
-        }),
+        handlePageFunction: async ({ request, page, response, session }) => {
+            // get and log category name
+            const title = await page.title();
+            const statusCode = await response.status();
+            log.info(`Processing: ${title}. Depth: ${request.userData.depthOfCrawl},`
+                + `is detail page: ${request.userData.detailPage} URL: ${request.url}`);
+
+            const pageData = { category: title, categoryUrl: request.url };
+
+            // Loading cheerio for easy parsing, remove if you wish
+            const html = await page.content();
+            const $ = cheerio.load(html);
+
+            // We handle this separately to get info
+            if ($('[action="/errors/validateCaptcha"]').length > 0) {
+                session.retire();
+                throw `[CAPTCHA]: Status Code: ${response.statusCode}`;
+            }
+
+            if (html.toLowerCase().includes('robot check')) {
+                session.retire();
+                throw `[ROBOT CHECK]: Status Code: ${response.statusCode}.`;
+            }
+
+            if (!response || (statusCode !== 200 && statusCode !== 404)) {
+                session.retire();
+                throw `[Status code: ${statusCode}]. Retrying`;
+            }
+
+            // Enqueue main category pages on the Best Sellers homepage
+            if (!request.userData.detailPage) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'div > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 1;
+                        return req;
+                    },
+                });
+            }
+
+            // Enqueue second subcategory level
+            if (depthOfCrawl > 1 && request.userData.depthOfCrawl === 1) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'ul > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 2;
+                        return req;
+                    },
+                });
+            }
+
+            // ADD IN CASE MORE DATA IS NEEDED (ADDING 3RD SUBCATEGORY LEVEL)
+            // // Enqueue 3rd subcategory level
+            if (depthOfCrawl === 3 && request.userData.depthOfCrawl === 2) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'ul > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 3;
+                        return req;
+                    },
+                });
+            }
+            
+            if (depthOfCrawl === 4 && request.userData.depthOfCrawl === 3) {
+                await enqueueLinks({
+                    page,
+                    requestQueue,
+                    selector: 'ul > ul > ul > li > a',
+                    transformRequestFunction: (req) => {
+                        req.userData.detailPage = true;
+                        req.userData.depthOfCrawl = 4;
+                        return req;
+                    },
+                });
+            }
+
+            // Log number of pending URLs (works only locally)
+            // log.info(`Pending URLs: ${requestQueue.pendingCount}`);
+
+            // Scrape items from enqueued pages
+            if (request.userData.detailPage) {
+                await scrapeDetailsPage(page, pageData);
+            }
+        },
     });
 
     await crawler.run();

@@ -6,6 +6,7 @@ async function scrapeUrls(pageObj) {
     const resultsArr = [];
     // get page 1 url
     const page1Url = await pageObj.url();
+    log.info(`this is the page1url: ${page1Url}`)
     resultsArr.push(page1Url);
 
     // Go to page 2 and scrape
@@ -21,8 +22,8 @@ async function scrapeUrls(pageObj) {
         const page2Url = await pageObj.url();
         resultsArr.push(page2Url);
         await Apify.pushData(resultsArr);
-        log.info(`Saving results from ${await pageObj.title()}`);
+        log.info(`Saving results from ${page2Url}`);
     }
 }
 
-module.exports = { scrapeUrls };
+module.exports = { scrapeDetailsPage };
