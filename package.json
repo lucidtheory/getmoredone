@@ -1,0 +1,20 @@
+{
+    "name": "amazon-bestsellers-crawler",
+    "version": "0.0.1",
+    "description": "Automatically extract the top selling items across all main categories.",
+    "dependencies": {
+        "@types/cheerio": "^0.22.24",
+        "apify": "^0.22.4",
+        "cheerio": "^1.0.0-rc.5"
+    },
+    "devDependencies": {
+        "@apify/eslint-config": "0.0.3",
+        "eslint": "^6.8.0"
+    },
+    "scripts": {
+        "start": "node src/main.js",
+        "lint": "eslint --fix src/*"
+    },
+    "author": "mihails@apify.com",
+    "license": "Apache Version 2.0, January 2004"
+}
