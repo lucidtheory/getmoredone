@@ -4,6 +4,7 @@ const { log } = Apify.utils;
 
 async function getItems(pageObj, pageData, resultsArr) {
     // Scrape all items that match the selector
+    const itemsObj = await pageObj.$$eval('div.p13n-sc-truncated', prods => prods.map(prod => prod.innerHTML));
 
     const urlsObj = await pageObj.$$eval('span.aok-inline-block > a.a-link-normal', link => link.map(url => url.href));
 
@@ -11,7 +12,7 @@ async function getItems(pageObj, pageData, resultsArr) {
     const urlsArr = [];
     for (const link of urlsObj) {
         if (!urlsArr.includes(link)) {
-            urlsArr.push(link || "");
+            urlsArr.push(link || '');
         }
     }
 
@@ -21,7 +22,7 @@ async function getItems(pageObj, pageData, resultsArr) {
             ...pageData,
             ID: resultsArr.length,
             url: urlsArr[i],
-            asin: (urlsArr[i].split("/dp/")[1] || "").split("/")[0]
+            asin: (urlsArr[i].split('/dp/')[1] || '').split('/')[0],
         });
     }
 }
