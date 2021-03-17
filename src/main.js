@@ -105,7 +105,7 @@ Apify.main(async () => {
 
             // ADD IN CASE MORE DATA IS NEEDED (ADDING 3RD SUBCATEGORY LEVEL)
             // // Enqueue 3rd subcategory level
-            if (depthOfCrawl === 3 && request.userData.depthOfCrawl === 2) {
+            if (depthOfCrawl > 1 && request.userData.depthOfCrawl === 2) {
                 await enqueueLinks({
                     page,
                     requestQueue,
@@ -118,7 +118,7 @@ Apify.main(async () => {
                 });
             }
             
-            if (depthOfCrawl === 4 && request.userData.depthOfCrawl === 3) {
+            if (depthOfCrawl > 1 && request.userData.depthOfCrawl === 3) {
                 await enqueueLinks({
                     page,
                     requestQueue,
@@ -131,7 +131,7 @@ Apify.main(async () => {
                 });
             }
             
-            if (depthOfCrawl === 5 && request.userData.depthOfCrawl === 4) {
+            if (depthOfCrawl > 1 && request.userData.depthOfCrawl === 4) {
                 await enqueueLinks({
                     page,
                     requestQueue,
@@ -144,7 +144,7 @@ Apify.main(async () => {
                 });
             }
             
-            if (depthOfCrawl === 6 && request.userData.depthOfCrawl === 5) {
+            if (depthOfCrawl > 1 && request.userData.depthOfCrawl === 5) {
                 await enqueueLinks({
                     page,
                     requestQueue,
