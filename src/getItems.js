@@ -11,7 +11,7 @@ async function getItems(pageObj, pageData, resultsArr) {
     const urlsArr = [];
     for (const link of urlsObj) {
         if (!urlsArr.includes(link)) {
-            urlsArr.push(link);
+            urlsArr.push(link || "");
         }
     }
 
@@ -21,7 +21,7 @@ async function getItems(pageObj, pageData, resultsArr) {
             ...pageData,
             ID: resultsArr.length,
             url: urlsArr[i],
-            asin: urlsArr[i]?.split("/dp/")[1]?.split("/")[0]
+            asin: (urlsArr[i].split("/dp/")[1] || "").split("/")[0]
         });
     }
 }
